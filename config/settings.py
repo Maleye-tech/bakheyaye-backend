@@ -10,15 +10,24 @@ load_dotenv(BASE_DIR / ".env")
 
 
 def env_list(name, default=""):
-    return [v.strip() for v in os.getenv(name, default).split(",") if v.strip()]
+    value = os.getenv(name, default)
+    return [v.strip() for v in value.split(",") if v.strip()]
 
 
 SECRET_KEY = os.getenv("SECRET_KEY", "dev-insecure-key-change-me")
 DEBUG = os.getenv("DEBUG", "1") == "1"
+
 ALLOWED_HOSTS = env_list("ALLOWED_HOSTS", "localhost,127.0.0.1")
 CSRF_TRUSTED_ORIGINS = env_list("CSRF_TRUSTED_ORIGINS")
 
-USE_CLOUDINARY = bool(os.getenv("CLOUDINARY_URL"))
+# --- Cloudinary ---
+CLOUDINARY_URL = os.getenv("CLOUDINARY_URL")
+USE_CLOUDINARY = bool(CLOUDINARY_URL)
+
+if USE_CLOUDINARY:
+    CLOUDINARY_STORAGE = {
+        "CLOUDINARY_URL": CLOUDINARY_URL,
+    }
 
 INSTALLED_APPS = [
     "django.contrib.admin",
@@ -51,7 +60,7 @@ ROOT_URLCONF = "config.urls"
 TEMPLATES = [
     {
         "BACKEND": "django.template.backends.django.DjangoTemplates",
-        "DIRS": [],
+        "DIRS": [BASE_DIR / "templates"],
         "APP_DIRS": True,
         "OPTIONS": {
             "context_processors": [
@@ -89,7 +98,7 @@ TIME_ZONE = "Africa/Dakar"
 USE_I18N = True
 USE_TZ = True
 
-# --- Fichiers statiques & médias (Cloudinary si CLOUDINARY_URL est défini) ---
+# --- Fichiers statiques & médias ---
 STATIC_URL = "/static/"
 STATIC_ROOT = BASE_DIR / "staticfiles"
 MEDIA_URL = "/media/"
@@ -111,9 +120,13 @@ STORAGES = {
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 # --- CORS ---
-CORS_ALLOWED_ORIGINS = env_list("CORS_ALLOWED_ORIGINS", "http://localhost:5173")
-if DEBUG and not os.getenv("CORS_ALLOWED_ORIGINS"):
-    CORS_ALLOW_ALL_ORIGINS = True
+_cors_origins = env_list("CORS_ALLOWED_ORIGINS")
+if _cors_origins:
+    CORS_ALLOWED_ORIGINS = _cors_origins
+else:
+    CORS_ALLOWED_ORIGINS = ["http://localhost:5173", "http://127.0.0.1:5173"]
+    if DEBUG:
+        CORS_ALLOW_ALL_ORIGINS = True
 
 # --- Django REST Framework ---
 REST_FRAMEWORK = {
@@ -135,8 +148,11 @@ REST_FRAMEWORK = {
 SIMPLE_JWT = {
     "ACCESS_TOKEN_LIFETIME": timedelta(hours=8),
     "REFRESH_TOKEN_LIFETIME": timedelta(days=14),
+    "ROTATE_REFRESH_TOKENS": True,
+    "BLACKLIST_AFTER_ROTATION": True,
 }
 
+# --- Sécurité en Production ---
 if not DEBUG:
     SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
     SECURE_SSL_REDIRECT = os.getenv("SECURE_SSL_REDIRECT", "1") == "1"
