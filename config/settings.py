@@ -29,16 +29,14 @@ if USE_CLOUDINARY:
         "CLOUDINARY_URL": CLOUDINARY_URL,
     }
 
-INSTALLED_APPS = (
-    ["cloudinary_storage"] if USE_CLOUDINARY else []
-) + [
+INSTALLED_APPS = [
     "django.contrib.admin",
     "django.contrib.auth",
     "django.contrib.contenttypes",
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
-] + (["cloudinary"] if USE_CLOUDINARY else []) + [
+] + (["cloudinary_storage", "cloudinary"] if USE_CLOUDINARY else []) + [
     "corsheaders",
     "rest_framework",
     "django_filters",
@@ -144,6 +142,7 @@ REST_FRAMEWORK = {
     "DEFAULT_PAGINATION_CLASS": "shop.pagination.TenuePagination",
     "PAGE_SIZE": 12,
     "DEFAULT_RENDERER_CLASSES": ("rest_framework.renderers.JSONRenderer",),
+    "DEFAULT_THROTTLE_RATES": {"login": "10/min"},
 }
 
 SIMPLE_JWT = {
